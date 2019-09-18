@@ -7,7 +7,11 @@ to enable training due to the non-differentiable discrete quantization function 
 
 - Forward:
 
-<a href="https://www.codecogs.com/eqnedit.php?latex=\ell&space;=&space;\text{Loss}(f(Q(\mathbf{W}));&space;\mathbf{x}),&space;y)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\ell&space;=&space;\text{Loss}(f(Q(\mathbf{W}));&space;\mathbf{x}),&space;y)" title="\ell = \text{Loss}(f(Q(\mathbf{W})); \mathbf{x}), y)" /></a>
+<a href="https://www.codecogs.com/eqnedit.php?latex=\ell&space;=&space;\text{Loss}(f(Q(\mathbf{W}));&space;\mathbf{x}),&space;y)" target="_blank">
+<div align=center>
+<img src="https://latex.codecogs.com/gif.latex?\ell&space;=&space;\text{Loss}(f(Q(\mathbf{W}));&space;\mathbf{x}),&space;y)" title="\ell = \text{Loss}(f(Q(\mathbf{W})); \mathbf{x}), y)" />
+</div>
+</a>
 
 - Backward:
 
@@ -29,6 +33,7 @@ Such neural network is called **Meta Quantizer** and is trained
 together with the base quantized model.
 
 ## Method
+### Overflow of MetaQuant
 ![Overflow of MetaQuant](./figs/MetaQuant.png)
-
+### Incorporation of Meta Quantizer into quantization training
 ![Incorporation of Meta Quantizer into quantization training.](./figs/MetaQuant-Forward.png)
