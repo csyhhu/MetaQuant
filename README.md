@@ -1,6 +1,10 @@
 # MetaQuant
 Codes for Accepted Paper : "MetaQuant: Learning to Quantize by Learning to Penetrate Non-differentiable Quantization" in NeurIPS 2019
 
+## About MetaQuant
+check ```meta-quantize-tutorial.ipynb``` for description.
+
+<!--
 ## Motivation
 Most training-based quantization methods replies on [Straight-Through-Estimator](https://arxiv.org/abs/1602.02830) (STE)
 to enable training due to the non-differentiable discrete quantization function <a href="https://www.codecogs.com/eqnedit.php?latex=Q(\cdot)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?Q(\cdot)" title="Q(\cdot)" /></a>. Formally:
@@ -69,3 +73,47 @@ as inputs, and outputs the gradient on
 <img src="https://latex.codecogs.com/gif.latex?\mathbf{\tilde{W}}" title="\mathbf{\tilde{W}}" />.
 ### Incorporation of Meta Quantizer into quantization training
 ![Incorporation of Meta Quantizer into quantization training.](./figs/MetaQuant-Forward.png)
+-->
+
+## How to use it
+
+### Prepare pre-trained model
+The following command train a ResNet20 using CIFAR10:
+
+```python train_base_model.py -m ResNet20 -d CIFAR10```
+
+Or users can use the default pretrained model provided by us.
+### Run MetaQuant
+The following commands run MetaQuant on ResNet20 using CIFAR10 dataset with dorefa as forward
+quantization method and SGD as optimization. 
+
+The resulting quantized model is quantized using 1 bits: {+1, -1} for 
+all layers (conv, fc). 
+
+Initial learning rate is set as 1e-3 and decreases by a factor of 0.1 every
+30 epochs: 1e-3->1e-4->1e-5:
+```python3
+CUDA_VISIBLE_DEVICES='0' python meta-quantize.py -m ResNet20 -d CIFAR10 -q dorefa -bw 1 -o SGD -meta MultiFC -hidden 100 -ad 30
+```
+
+## Experiments
+
+## Required
+pytorch > 0.4
+
+## Customization
+
+## Support
+Leave an issue if there is any bug and email me if any concerns about paper.
+
+## Citation
+Cite the paper if anything helps you:
+
+```angular2
+@article{chen2019metaquant,
+  title={MetaQuant: Learning to Quantize by Learning to Penetrate Non-differentiable Quantization},
+  author={Chen, Shangyu and Wang, Wenya and Pan, Sinno Jialin},
+  journal={Conference on Neural Information Processing Systems},
+  year={2019}
+}
+```
