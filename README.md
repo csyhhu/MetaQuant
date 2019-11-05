@@ -1,5 +1,7 @@
 # MetaQuant
-Codes for Accepted Paper : "MetaQuant: Learning to Quantize by Learning to Penetrate Non-differentiable Quantization" in NeurIPS 2019
+Codes for Accepted Paper : "MetaQuant: Learning to Quantize by Learning to Penetrate Non-differentiable Quantization" in NeurIPS 2019.
+
+Camera-ready is now released [here](./MetaQuant-Preprint.pdf)!
 
 ## About MetaQuant
 check ```meta-quantize-tutorial.ipynb``` for description.
