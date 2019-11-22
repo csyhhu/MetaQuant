@@ -3,6 +3,10 @@ Codes for Accepted Paper : "MetaQuant: Learning to Quantize by Learning to Penet
 
 Camera-ready is now released [here](./MetaQuant-Preprint.pdf)!
 
+Poster is released [here](./MetaQuant-Poster.pdf)!
+
+Slides is released [here](./MetaQuant-Slides)!
+
 ## About MetaQuant
 check ```meta-quantize-tutorial.ipynb``` for description.
 
