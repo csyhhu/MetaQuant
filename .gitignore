@@ -105,3 +105,4 @@ venv.bak/
 .idea/
 # Results/
 back.txt
+.DS_Store
