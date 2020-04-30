@@ -70,6 +70,8 @@ def meta_gradient_generation(meta_net, net, meta_method, meta_hidden_state_dict=
             else:
                 meta_output, hidden = meta_net(flatten_weight, meta_hidden_state)
 
+            new_meta_hidden_state_dict[layer_name] = tuple(h.detach() for h in hidden)
+
             meta_grad = flatten_grad * meta_output
 
         else:

@@ -159,7 +159,7 @@ meta_grad_dict = dict() # Dictionary to store meta net output: gradient for orig
 ##################
 # Begin Training #
 ##################
-meta_opt_flag = True # When it is false, stop updating meta optimizer
+# meta_opt_flag = True # When it is false, stop updating meta optimizer
 
 # Optimizer for original network, just for zeroing gradient and get refined gradient
 if optimizer_type == 'SGD-M':
@@ -223,19 +223,6 @@ for epoch in range(MAX_EPOCH):
                         meta_net, net, meta_method, meta_hidden_state_dict
                 )
 
-        outputs = net(inputs, quantized_type=quantized_type,
-                      meta_grad_dict=meta_grad_dict,
-                      lr=optimizee.param_groups[0]['lr'])
-
-        optimizee.zero_grad()
-
-        # Taking backward generate gradient for meta pruner and base model
-        # Non-meta-weights' (bias, BN layer) gradient is attained here
-        losses = nn.CrossEntropyLoss()(outputs, targets)
-        losses.backward()
-
-        meta_optimizer.step()
-
         # Assign meta gradient for actual gradients used in update_parameters
         if len(meta_grad_dict) != 0:
             for layer_info in net.layer_name_list:
@@ -248,9 +235,23 @@ for epoch in range(MAX_EPOCH):
         # Get refine gradients for next computation
         optimizee.get_refine_gradient()
 
+        outputs = net(inputs, quantized_type=quantized_type,
+                      meta_grad_dict=meta_grad_dict,
+                      lr=optimizee.param_groups[0]['lr'])
+
+        optimizee.zero_grad()
+
+        # Taking backward generate gradient for meta pruner and base model
+        # Non-meta-weights' (bias, BN layer) gradient is attained here
+        losses = nn.CrossEntropyLoss()(outputs, targets)
+
+        meta_optimizer.step()
+
         # These gradient should be saved in next iteration's inference
         if len(meta_grad_dict) != 0:
             update_parameters(net, lr=optimizee.param_groups[0]['lr'])
+
+        losses.backward()
 
         recorder.update(loss=losses.data.item(), acc=accuracy(outputs.data, targets.data, (1,5)),
                         batch_size=outputs.shape[0], cur_lr=optimizee.param_groups[0]['lr'], end=end)
