@@ -67,18 +67,19 @@ class MetaQuantConv(nn.Module):
 
     def forward(self, x, quantized_type = None, meta_grad = None, lr = 1e-3):
 
+        if quantized_type == 'dorefa':
+            self.calibration = 1 / (torch.max(torch.abs(torch.tanh(self.weight.data)))) \
+                               * (1 - torch.pow(torch.tanh(self.weight.data), 2)).detach()
+        elif quantized_type in ['BWN', 'BWN-F']:
+            # alpha should be calculated in the previous iteration
+            # self.calibration = torch.mean(torch.abs(self.weight.data))
+            self.calibration = 1.0
+        else:
+            self.calibration = 1.0
+
+
         # Update meta weight
         if meta_grad is not None:
-
-            if quantized_type == 'dorefa':
-                self.calibration = 1 / (torch.max(torch.abs(torch.tanh(self.weight.data)))) \
-                     * (1 - torch.pow(torch.tanh(self.weight.data), 2)).detach()
-            elif quantized_type in ['BWN', 'BWN-F']:
-                # alpha should be calculated in the previous iteration
-                # self.calibration = torch.mean(torch.abs(self.weight.data))
-                self.calibration = 1.0
-            else:
-                self.calibration = 1.0
 
             # calibrated grads are gradients for original weights before any optimization acceleration technique
             self.calibrated_grads = meta_grad[1] * self.calibration
@@ -180,14 +181,15 @@ class MetaQuantLinear(nn.Module):
 
     def forward(self, x, quantized_type = None, meta_grad = None, lr=1e-3):
 
+        if quantized_type == 'dorefa':
+            self.calibration = 1.0 / (torch.max(torch.abs(torch.tanh(self.weight.data))).detach()) \
+                               * (1 - torch.pow(torch.tanh(self.weight.data), 2)).detach()
+        elif quantized_type in ['BWN', 'BWN-F']:
+            self.calibration = 1.0
+        else:
+            self.calibration = 1.0
+
         if meta_grad is not None:
-            if quantized_type == 'dorefa':
-                self.calibration = 1.0 / (torch.max(torch.abs(torch.tanh(self.weight.data))).detach()) \
-                     * (1 - torch.pow(torch.tanh(self.weight.data), 2)).detach()
-            elif quantized_type in ['BWN', 'BWN-F']:
-                self.calibration = 1.0
-            else:
-                self.calibration = 1.0
 
             self.calibrated_grads = meta_grad[1] * self.calibration
 

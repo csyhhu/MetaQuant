@@ -69,6 +69,7 @@ args = parser.parse_args()
 
 # ------------------------------------------
 use_cuda = torch.cuda.is_available()
+device = 'cuda' if use_cuda else 'cpu'
 model_name = args.model
 dataset_name = args.dataset
 meta_method = args.meta_type # ['LSTM', 'FC', 'simple']
@@ -95,17 +96,11 @@ gVar.meta_count = 0
 ###################
 if model_name == 'ResNet20':
     net = resnet20_cifar(bitW=bitW)
-# elif model_name == 'ResNet18':
-#     net = resnet18(bitW=bitW, quantized_head_tail=args.quantized_head_tail)
-# elif model_name == 'ResNet34':
-#     net = resnet34(bitW=bitW, quantized_head_tail=args.quantized_head_tail)
-# elif model_name == 'ResNet50':
-#     net = resnet50(bitW=bitW, quantized_head_tail=args.quantized_head_tail)
 else:
     raise NotImplementedError
 
 pretrain_path = '%s/%s-%s-pretrain.pth' % (save_root, model_name, dataset_name)
-net.load_state_dict(torch.load(pretrain_path), strict=False)
+net.load_state_dict(torch.load(pretrain_path, map_location=device), strict=False)
 
 # Get layer name list
 layer_name_list = net.layer_name_list
@@ -213,15 +208,27 @@ for epoch in range(MAX_EPOCH):
 
         meta_optimizer.zero_grad()
 
-        # Construct new net
+        # Ignore the first meta gradient generation due to the lack of natural gradient
         if batch_idx == 0 and epoch == 0:
             pass
-            # meta_grad_dict, meta_hidden_state_dict = construct_init_meta_grad_dict(net)
         else:
             meta_grad_dict, meta_hidden_state_dict = \
                 meta_gradient_generation(
                         meta_net, net, meta_method, meta_hidden_state_dict
                 )
+        # Conduct inference with meta gradient, which is incorporated into the computational graph
+        outputs = net(
+            inputs, quantized_type=quantized_type, meta_grad_dict=meta_grad_dict, lr=optimizee.param_groups[0]['lr']
+        )
+
+        # Clear gradient, which is stored in layer.weight.grad
+        optimizee.zero_grad()
+
+        # Backpropagation to attain natural gradient, which is stored in layer.pre_quantized_grads
+        losses = nn.CrossEntropyLoss()(outputs, targets)
+        losses.backward()
+
+        meta_optimizer.step()
 
         # Assign meta gradient for actual gradients used in update_parameters
         if len(meta_grad_dict) != 0:
@@ -229,29 +236,15 @@ for epoch in range(MAX_EPOCH):
                 layer_name = layer_info[0]
                 layer_idx = layer_info[1]
                 layer = get_layer(net, layer_idx)
-                layer.weight.grad.data = (layer.calibration * layer.pre_quantized_grads)
-                # layer.weight.grad.data.copy_(layer.calibration * meta_grad_dict[layer_name][1].data)
+                layer.weight.grad.data = (
+                    layer.calibration * meta_grad_dict[layer_name][1].data
+                )
 
-        # Get refine gradients for next computation
-        optimizee.get_refine_gradient()
+            # Get refine gradients for actual parameters update
+            optimizee.get_refine_gradient()
 
-        outputs = net(inputs, quantized_type=quantized_type,
-                      meta_grad_dict=meta_grad_dict,
-                      lr=optimizee.param_groups[0]['lr'])
-
-        optimizee.zero_grad()
-
-        # Taking backward generate gradient for meta pruner and base model
-        # Non-meta-weights' (bias, BN layer) gradient is attained here
-        losses = nn.CrossEntropyLoss()(outputs, targets)
-
-        meta_optimizer.step()
-
-        # These gradient should be saved in next iteration's inference
-        if len(meta_grad_dict) != 0:
+            # Actual parameters update using the refined gradient from meta gradient
             update_parameters(net, lr=optimizee.param_groups[0]['lr'])
-
-        losses.backward()
 
         recorder.update(loss=losses.data.item(), acc=accuracy(outputs.data, targets.data, (1,5)),
                         batch_size=outputs.shape[0], cur_lr=optimizee.param_groups[0]['lr'], end=end)

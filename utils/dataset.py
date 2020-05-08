@@ -33,8 +33,8 @@ def get_dataloader(dataset_name, split, batch_size, shuffle = True, num_workers=
 
     if dataset_name == 'CIFAR10':
 
-        data_root_list = ['/home/shangyu/CIFAR10', '/home/sinno/csy/CIFAR10', '/data1/datasets/CIFAR10',
-                          '~/Documents/datasets/CIFAR10', '/home/lxduan/sinno/CIFAR10']
+        data_root_list = ['/home/shangyu/CIFAR10',
+                          '/Users/shangyu/Documents/datasets/CIFAR10']
 
         for data_root in data_root_list:
             if os.path.exists(data_root):
@@ -65,7 +65,7 @@ def get_dataloader(dataset_name, split, batch_size, shuffle = True, num_workers=
 
     elif dataset_name == 'CIFAR100':
 
-        data_root_list = ['/home/shangyu/CIFAR100', '/home/lxduan/sinno/CIFAR100', '/home/sinno/csy/CIFAR100']
+        data_root_list = ['/home/shangyu/CIFAR100', '/home/sinno/csy/CIFAR100']
         for data_root in data_root_list:
             if os.path.exists(data_root):
                 break
